@@ -1,2 +1,2 @@
 # iot-greenhouse-ctrl
-IOT greenhouse controller on Onion Omega with Python
+IOT greenhouse controller on Raspberry Pi with Python
