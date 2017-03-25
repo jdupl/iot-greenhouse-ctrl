@@ -1,77 +1,14 @@
 import time
 
-import smbus
-import Adafruit_DHT
+from sensors import DHT11Sensor, DHT22Sensor
+from systems import Ventilation, Fan, WindowActuator
 
 
 MAX_SENSOR_DOWNTIME_SEC = 2 * 60
 
-# Change to 0 if using pi with 256MB
-i2c_bus = smbus.SMBus(1)
-
-
-class AbstractSensor():
-
-    def __init__(self):
-        self.last_failure = 0
-        self.last_success = 0
-
-    def read(self):
-        raise('Abstract')
-
-
-class DHTSensor(AbstractSensor):
-    def __init__(self, bcm_pin, location):
-        self.bcm_pin = bcm_pin
-        self.location = location
-
-    def read(self):
-        rel_humidity, temp = Adafruit_DHT.read_retry(
-            self.dht_type, self.bcm_pin)
-
-        if not temp or not rel_humidity:
-            self.last_failure = time.time()
-            return
-
-        self.last_success = time.time()
-        return {
-            'temperature': temp,
-            'rel_humidity': rel_humidity
-        }
-
-
-class ADCSensor(AbstractSensor):
-    def __init__(self, i2c_addr, location):
-        self.i2c_addr = i2c_addr
-        self.location = location
-
-    def read(self):
-        for x in range(0, 4):
-            i2c_bus.write_byte_data(0x48, 0x40 | ((x + 1) & 0x03), 0)
-            v = i2c_bus.read_byte(0x48)
-            print(v,)
-            time.sleep(0.1)
-        print()
-
-
-class DHT22Sensor(DHTSensor):
-    def __init__(self, bcm_pin, location):
-        self.dht_type = Adafruit_DHT.DHT22
-        super(DHT22Sensor, self).__init__(bcm_pin, location)
-
-
-class DHT11Sensor(DHTSensor):
-    def __init__(self, bcm_pin, location):
-        self.dht_type = Adafruit_DHT.DHT11
-        super(DHT11Sensor, self).__init__(bcm_pin, location)
-
 
 def get_current_values(sensors):
-    next_values = {
-        'temperature': {},
-        'rel_humidity': {},
-        'soil_humidity': {},
-    }
+    next_values = {}
 
     for sensor in sensors:
         sensor_reading = sensor.read()
@@ -85,11 +22,12 @@ def get_current_values(sensors):
     return next_values
 
 
-def emergency_shutdown(equipments):
+def emergency_deactivate(systems):
     # Kill power to all equipment
-    print('SHUTTING DOWN ALL EQUIPMENT')
-    for equipment in equipments:
-        equipment.poweroff()
+    print('DEACTIVATING DOWN ALL SYSTEMS')
+
+    for equipment in systems:
+        equipment.deactivate()
 
 
 def system_operational(sensors):
@@ -102,15 +40,22 @@ def system_operational(sensors):
     return True
 
 
+def update_systems_status_routine(sensors, systems):
+    pass
+
+
 def main():
     sensors = [
-        DHT11Sensor(25, 'outside'),
+        # DHT11Sensor(25, 'outside'),
         DHT22Sensor(24, 'back'),
         DHT22Sensor(23, 'front')
     ]
 
-    equipments = [
+    fan = Fan(22)
+    window_actuator = WindowActuator(17, 27)
 
+    systems = [
+        Ventilation(fan, window_actuator)
     ]
 
     while True:
@@ -118,7 +63,9 @@ def main():
         print(vals)
 
         if not system_operational(sensors):
-            emergency_shutdown(equipments)
+            emergency_deactivate(systems)
+        else:
+            update_systems_status_routine(sensors, systems)
 
         time.sleep(10)
 
