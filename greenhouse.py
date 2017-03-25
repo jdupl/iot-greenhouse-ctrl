@@ -1,8 +1,13 @@
 import time
+
+import smbus
 import Adafruit_DHT
 
 
 MAX_SENSOR_DOWNTIME_SEC = 2 * 60
+
+# Change to 0 if using pi with 256MB
+i2c_bus = smbus.SMBus(1)
 
 
 class AbstractSensor():
@@ -33,6 +38,20 @@ class DHTSensor(AbstractSensor):
             'temperature': temp,
             'rel_humidity': rel_humidity
         }
+
+
+class ADCSensor(AbstractSensor):
+    def __init__(self, i2c_addr, location):
+        self.i2c_addr = i2c_addr
+        self.location = location
+
+    def read(self):
+        for x in range(0, 4):
+            i2c_bus.write_byte_data(0x48, 0x40 | ((x + 1) & 0x03), 0)
+            v = i2c_bus.read_byte(0x48)
+            print(v,)
+            time.sleep(0.1)
+        print()
 
 
 class DHT22Sensor(DHTSensor):
@@ -98,7 +117,7 @@ def main():
         vals = get_current_values(sensors)
         print(vals)
 
-        if not system_operational():
+        if not system_operational(sensors):
             emergency_shutdown(equipments)
 
         time.sleep(10)
