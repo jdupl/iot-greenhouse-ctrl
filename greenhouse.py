@@ -26,7 +26,7 @@ def emergency_deactivate(systems):
     # Kill power to all equipment
     print('DEACTIVATING DOWN ALL SYSTEMS')
 
-    for equipment in systems:
+    for name, equipment in systems.items():
         equipment.deactivate()
 
 
@@ -40,8 +40,20 @@ def system_operational(sensors):
     return True
 
 
-def update_systems_status_routine(sensors, systems):
+def too_cold(sensors):
     pass
+
+
+def too_hot(vals):
+    return vals['back']['temperature'] > 15 or \
+        vals['front']['temperature'] > 15
+
+
+def update_systems_status_routine(vals, systems):
+    if too_hot(vals):
+        systems['ventilation'].activate()
+    if too_cold(vals):
+        systems['ventilation'].deactivate()
 
 
 def main():
@@ -51,21 +63,28 @@ def main():
         DHT22Sensor(23, 'front')
     ]
 
-    fan = Fan(22)
-    window_actuator = WindowActuator(17, 27)
+    fan = Fan('Fan 1', 22)
+    window_actuator = WindowActuator('Window 1', 17, 27)
+    ventilation = Ventilation('Ventilation system 1', fan, window_actuator)
 
-    systems = [
-        Ventilation(fan, window_actuator)
-    ]
+    systems = {
+        'ventilation': ventilation
+    }
+
+    vals = {}
 
     while True:
-        vals = get_current_values(sensors)
+        new_vals = get_current_values(sensors)
+        for k, v in vals.items():
+            if k not in new_vals:
+                new_vals[k] = vals[k]
+        vals = new_vals
         print(vals)
 
         if not system_operational(sensors):
             emergency_deactivate(systems)
         else:
-            update_systems_status_routine(sensors, systems)
+            update_systems_status_routine(vals, systems)
 
         time.sleep(10)
 
