@@ -73,7 +73,7 @@ class WindowActuator(AbstractSystem):
 
     def __init__(self, name, close_window_relay_pin, open_window_relay_pin):
         super(WindowActuator, self).__init__(name)
-        self.actuator_delay_sec = 5
+        self.actuator_delay_sec = 15
         self.close_window_relay_pin = close_window_relay_pin
         self.open_window_relay_pin = open_window_relay_pin
         self.gpio_wrapper_close = RPiGPIOWrapper(close_window_relay_pin)
