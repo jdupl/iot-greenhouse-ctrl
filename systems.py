@@ -1,4 +1,7 @@
 import time
+import RPi.GPIO as _GPIO
+
+from gpio import RPiGPIOWrapper
 
 
 class AbstractSystem():
@@ -70,24 +73,32 @@ class WindowActuator(AbstractSystem):
 
     def __init__(self, name, close_window_relay_pin, open_window_relay_pin):
         super(WindowActuator, self).__init__(name)
-        self.actuator_delay_sec = 30
+        self.actuator_delay_sec = 5
         self.close_window_relay_pin = close_window_relay_pin
         self.open_window_relay_pin = open_window_relay_pin
+        self.gpio_wrapper_close = RPiGPIOWrapper(close_window_relay_pin)
+        self.gpio_wrapper_open = RPiGPIOWrapper(open_window_relay_pin)
 
     def _activate(self):
         print('Opening window. Waiting for actuator for %d seconds.' %
               self.actuator_delay_sec)
-        # open 'opening' relay
+        # close 'opening' relay circuit (power on)
+        self.gpio_wrapper_open.output(_GPIO.LOW)
         time.sleep(self.actuator_delay_sec)
-        # close 'open' relay
+        # open 'open' relay circuit (power off)
+        self.gpio_wrapper_open.output(_GPIO.HIGH)
+        self.gpio_wrapper_open.cleanup()
         print('Window is now opened.')
 
     def _deactivate(self):
         print('Closing window. Waiting for actuator for %d seconds.' %
               self.actuator_delay_sec)
-        # open 'closing' relay
+        # close 'closing' relay circuit (power on)
+        self.gpio_wrapper_close.output(_GPIO.LOW)
         time.sleep(self.actuator_delay_sec)
-        # close 'closing' relay
+        # open 'closing' relay circuit (power off)
+        self.gpio_wrapper_close.output(_GPIO.HIGH)
+        self.gpio_wrapper_close.cleanup()
         print('Window is now closed.')
 
 

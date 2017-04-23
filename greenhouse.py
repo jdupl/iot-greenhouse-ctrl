@@ -40,13 +40,12 @@ def system_operational(sensors):
     return True
 
 
-def too_cold(sensors):
-    pass
+def too_cold(vals):
+    return vals['front']['temperature'] < 20
 
 
 def too_hot(vals):
-    return vals['back']['temperature'] > 15 or \
-        vals['front']['temperature'] > 15
+    return vals['front']['temperature'] > 24
 
 
 def update_systems_status_routine(vals, systems):
@@ -59,12 +58,13 @@ def update_systems_status_routine(vals, systems):
 def main():
     sensors = [
         # DHT11Sensor(25, 'outside'),
-        DHT22Sensor(24, 'back'),
+        # DHT22Sensor(24, 'back'),
         DHT22Sensor(23, 'front')
     ]
 
     fan = Fan('Fan 1', 22)
-    window_actuator = WindowActuator('Window 1', 17, 27)
+    window_actuator = WindowActuator('Window 1', close_window_relay_pin=17,
+                                     open_window_relay_pin=27)
     ventilation = Ventilation('Ventilation system 1', fan, window_actuator)
 
     systems = {

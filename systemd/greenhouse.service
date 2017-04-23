@@ -1,0 +1,16 @@
+[Unit]
+Description=Greenhouse service
+After=syslog.target
+
+[Service]
+Type=simple
+Restart=always
+User=pi
+Group=pi
+ExecStart=/usr/bin/python3 /home/pi/iot-greenhouse-ctrl/greenhouse.py
+StandardOutput=syslog
+StandardError=syslog
+WorkingDirectory= /home/pi/iot/iot-greenhouse-ctrl/
+
+[Install]
+WantedBy=multi-user.target
