@@ -10,7 +10,7 @@ Group=pi
 ExecStart=/usr/bin/python3 /home/pi/iot-greenhouse-ctrl/greenhouse.py
 StandardOutput=syslog
 StandardError=syslog
-WorkingDirectory= /home/pi/iot/iot-greenhouse-ctrl/
+WorkingDirectory= /home/pi/iot-greenhouse-ctrl
 
 [Install]
 WantedBy=multi-user.target
