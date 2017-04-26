@@ -41,11 +41,11 @@ def system_operational(sensors):
 
 
 def too_cold(vals):
-    return vals['front']['temperature'] < 20
+    return vals['front']['temperature'] <= 19
 
 
 def too_hot(vals):
-    return vals['front']['temperature'] > 24
+    return vals['front']['temperature'] > 21
 
 
 def update_systems_status_routine(vals, systems):
@@ -63,8 +63,11 @@ def main():
     ]
 
     fan = Fan('Fan 1', 22)
-    window_actuator = WindowActuator('Window 1', close_window_relay_pin=17,
-                                     open_window_relay_pin=27)
+    window_actuator = WindowActuator('Window 1',
+                                     vdc_close_window_relay_pin=24,
+                                     neutral_close_relay_pin=22,
+                                     vdc_open_window_relay_pin=27,
+                                     neutral_open_relay_pin=17)
     ventilation = Ventilation('Ventilation system 1', fan, window_actuator)
 
     systems = {
@@ -72,6 +75,8 @@ def main():
     }
 
     vals = {}
+
+    systems['ventilation'].deactivate()
 
     while True:
         new_vals = get_current_values(sensors)

@@ -71,34 +71,76 @@ class Ventilation(AbstractSystem):
 
 class WindowActuator(AbstractSystem):
 
-    def __init__(self, name, close_window_relay_pin, open_window_relay_pin):
+    def __init__(self, name,
+                 vdc_close_window_relay_pin, neutral_close_relay_pin,
+                 vdc_open_window_relay_pin, neutral_open_relay_pin):
         super(WindowActuator, self).__init__(name)
-        self.actuator_delay_sec = 15
-        self.close_window_relay_pin = close_window_relay_pin
-        self.open_window_relay_pin = open_window_relay_pin
-        self.gpio_wrapper_close = RPiGPIOWrapper(close_window_relay_pin)
-        self.gpio_wrapper_open = RPiGPIOWrapper(open_window_relay_pin)
+        self.actuator_delay_sec = 60
+
+        self.vdc_close_window_relay_pin = vdc_close_window_relay_pin
+        self.neutral_close_relay_pin = neutral_close_relay_pin
+        self.vdc_open_window_relay_pin = vdc_open_window_relay_pin
+        self.neutral_open_relay_pin = neutral_open_relay_pin
+
+        self.vdc_close_window_relay_pin_wrapper = RPiGPIOWrapper(
+            vdc_close_window_relay_pin)
+        self.neutral_close_relay_pin_wrapper = RPiGPIOWrapper(
+            neutral_close_relay_pin)
+        self.vdc_open_window_relay_pin_wrapper = RPiGPIOWrapper(
+            vdc_open_window_relay_pin)
+        self.neutral_open_relay_pin_wrapper = RPiGPIOWrapper(
+            neutral_open_relay_pin)
+
+    def _open_all_relays(self):
+        # power off everything
+        self.vdc_close_window_relay_pin_wrapper.output(_GPIO.HIGH)
+        self.neutral_close_relay_pin_wrapper.output(_GPIO.HIGH)
+        self.vdc_open_window_relay_pin_wrapper.output(_GPIO.HIGH)
+        self.neutral_open_relay_pin_wrapper.output(_GPIO.HIGH)
+
+        self.vdc_close_window_relay_pin_wrapper.cleanup()
+        self.neutral_close_relay_pin_wrapper.cleanup()
+        self.vdc_open_window_relay_pin_wrapper.cleanup()
+        self.neutral_open_relay_pin_wrapper.cleanup()
 
     def _activate(self):
+        self._open_all_relays()
         print('Opening window. Waiting for actuator for %d seconds.' %
               self.actuator_delay_sec)
-        # close 'opening' relay circuit (power on)
-        self.gpio_wrapper_open.output(_GPIO.LOW)
+        # close 'vdc_open_window_relay_pin' and
+        # 'neutral_open_relay_pin_wrapper' relays circuit (power on)
+        self.vdc_open_window_relay_pin_wrapper.output(_GPIO.LOW)
+        self.neutral_open_relay_pin_wrapper.output(_GPIO.LOW)
+
+        # Let actuator work
         time.sleep(self.actuator_delay_sec)
+
         # open 'open' relay circuit (power off)
-        self.gpio_wrapper_open.output(_GPIO.HIGH)
-        self.gpio_wrapper_open.cleanup()
+        self.vdc_open_window_relay_pin_wrapper.output(_GPIO.HIGH)
+        self.neutral_open_relay_pin_wrapper.output(_GPIO.HIGH)
+
+        self.vdc_open_window_relay_pin_wrapper.cleanup()
+        self.neutral_open_relay_pin_wrapper.cleanup()
         print('Window is now opened.')
 
     def _deactivate(self):
+        self._open_all_relays()
         print('Closing window. Waiting for actuator for %d seconds.' %
               self.actuator_delay_sec)
-        # close 'closing' relay circuit (power on)
-        self.gpio_wrapper_close.output(_GPIO.LOW)
+        # close 'vdc_close_window_relay_pin' and
+        # 'neutral_close_relay_pin_wrapper' relays circuit (power on)
+        self.vdc_close_window_relay_pin_wrapper.output(_GPIO.LOW)
+        self.neutral_close_relay_pin_wrapper.output(_GPIO.LOW)
+
+        # Let actuator work
         time.sleep(self.actuator_delay_sec)
-        # open 'closing' relay circuit (power off)
-        self.gpio_wrapper_close.output(_GPIO.HIGH)
-        self.gpio_wrapper_close.cleanup()
+
+        # open 'close' relay circuit (power off)
+        self.vdc_close_window_relay_pin_wrapper.output(_GPIO.HIGH)
+        self.neutral_close_relay_pin_wrapper.output(_GPIO.HIGH)
+
+        self.vdc_close_window_relay_pin_wrapper.cleanup()
+        self.neutral_close_relay_pin_wrapper.cleanup()
         print('Window is now closed.')
 
 
