@@ -48,11 +48,11 @@ def too_hot(vals):
     return vals['front']['temperature'] > 21
 
 
-def update_systems_status_routine(vals, systems):
+def update_systems_status_routine(vals, window_actuator):
     if too_hot(vals):
-        systems['ventilation'].activate()
+        window_actuator.activate()
     if too_cold(vals):
-        systems['ventilation'].deactivate()
+        window_actuator.deactivate()
 
 
 def main():
@@ -89,7 +89,7 @@ def main():
         if not system_operational(sensors):
             emergency_deactivate(systems)
         else:
-            update_systems_status_routine(vals, systems)
+            update_systems_status_routine(vals, window_actuator)
 
         time.sleep(10)
 

@@ -21,8 +21,12 @@ class AbstractSystem():
 
         print('Proceeding to activate %s.' % self.name)
         self.state = 'activating'
+
+        if not self._activate():
+            self.state = 'deactivated'
+            return
+
         self.last_change = time.time()
-        self._activate()
 
         self.state = 'activated'
         self.last_change = time.time()
@@ -35,9 +39,14 @@ class AbstractSystem():
             print('System %s already deactivated.' % self.name)
             return
 
-            self.state = 'deactivating'
+        print('Proceeding to deactivate %s.' % self.name)
+        self.state = 'deactivating'
+
+        if not self._deactivate():
+            self.state = 'activated'
+            return
+
         self.last_change = time.time()
-        self._deactivate()
 
         self.state = 'deactivated'
         self.last_change = time.time()
@@ -76,6 +85,9 @@ class WindowActuator(AbstractSystem):
                  vdc_open_window_relay_pin, neutral_open_relay_pin):
         super(WindowActuator, self).__init__(name)
         self.actuator_delay_sec = 60
+        self.duty = .25
+
+        self.duty_cycle_delay = self.actuator_delay_sec / self.duty
 
         self.vdc_close_window_relay_pin = vdc_close_window_relay_pin
         self.neutral_close_relay_pin = neutral_close_relay_pin
@@ -102,9 +114,16 @@ class WindowActuator(AbstractSystem):
         self.neutral_close_relay_pin_wrapper.cleanup()
         self.vdc_open_window_relay_pin_wrapper.cleanup()
         self.neutral_open_relay_pin_wrapper.cleanup()
+        time.sleep(1)
 
     def _activate(self):
         self._open_all_relays()
+
+        last_activation_ago = time.time() - self.last_change
+        if last_activation_ago < self.duty_cycle_delay:
+            print('Window can not be opened. Waiting for motor duty cooldown.')
+            return False
+
         print('Opening window. Waiting for actuator for %d seconds.' %
               self.actuator_delay_sec)
         # close 'vdc_open_window_relay_pin' and
@@ -121,10 +140,18 @@ class WindowActuator(AbstractSystem):
 
         self.vdc_open_window_relay_pin_wrapper.cleanup()
         self.neutral_open_relay_pin_wrapper.cleanup()
+
         print('Window is now opened.')
+        return True
 
     def _deactivate(self):
         self._open_all_relays()
+        last_activation_ago = time.time() - self.last_change
+
+        if last_activation_ago < self.duty_cycle_delay:
+            print('Window can not be opened. Waiting for motor duty cooldown.')
+            return False
+
         print('Closing window. Waiting for actuator for %d seconds.' %
               self.actuator_delay_sec)
         # close 'vdc_close_window_relay_pin' and
@@ -142,6 +169,7 @@ class WindowActuator(AbstractSystem):
         self.vdc_close_window_relay_pin_wrapper.cleanup()
         self.neutral_close_relay_pin_wrapper.cleanup()
         print('Window is now closed.')
+        return True
 
 
 class Fan(AbstractSystem):
