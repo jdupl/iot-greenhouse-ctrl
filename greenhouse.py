@@ -41,18 +41,18 @@ def system_operational(sensors):
 
 
 def too_cold(vals):
-    return vals['front']['temperature'] <= 19
+    return vals['front']['temperature'] <= 22
 
 
 def too_hot(vals):
-    return vals['front']['temperature'] > 21
+    return vals['front']['temperature'] > 28
 
 
-def update_systems_status_routine(vals, window_actuator):
+def update_systems_status_routine(vals, ventilation):
     if too_hot(vals):
-        window_actuator.activate()
+        ventilation.activate()
     if too_cold(vals):
-        window_actuator.deactivate()
+        ventilation.deactivate()
 
 
 def main():
@@ -62,7 +62,7 @@ def main():
         DHT22Sensor(23, 'front')
     ]
 
-    fan = Fan('Fan 1', 22)
+    fan = Fan('Fan 1', 26)
     window_actuator = WindowActuator('Window 1',
                                      vdc_close_window_relay_pin=24,
                                      neutral_close_relay_pin=22,
@@ -76,7 +76,7 @@ def main():
 
     vals = {}
 
-    systems['ventilation'].deactivate()
+    ventilation.close_up()
 
     while True:
         new_vals = get_current_values(sensors)
@@ -89,7 +89,7 @@ def main():
         if not system_operational(sensors):
             emergency_deactivate(systems)
         else:
-            update_systems_status_routine(vals, window_actuator)
+            update_systems_status_routine(vals, ventilation)
 
         time.sleep(10)
 

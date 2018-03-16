@@ -17,34 +17,35 @@ class AbstractSystem():
 
         if self.state == 'activated':
             print('System %s already activated.' % self.name)
-            return
+            return False
 
         print('Proceeding to activate %s.' % self.name)
         self.state = 'activating'
 
         if not self._activate():
             self.state = 'deactivated'
-            return
+            return False
 
         self.last_change = time.time()
 
         self.state = 'activated'
         self.last_change = time.time()
         print('%s is now activated.' % self.name)
+        return True
 
     def deactivate(self):
         print('Deactivate %s requested.' % self.name)
 
         if self.state == 'deactivated':
             print('System %s already deactivated.' % self.name)
-            return
+            return False
 
         print('Proceeding to deactivate %s.' % self.name)
         self.state = 'deactivating'
 
         if not self._deactivate():
             self.state = 'activated'
-            return
+            return False
 
         self.last_change = time.time()
 
@@ -52,6 +53,7 @@ class AbstractSystem():
         self.last_change = time.time()
 
         print('%s is now deactivated.' % self.name)
+        return True
 
     def _deactivate(self):
         # close valve to irrigation, close fan and window, etc.
@@ -69,13 +71,19 @@ class Ventilation(AbstractSystem):
         self.fan_subsystem = fan_subsystem
         self.window_subsystem = window_subsystem
 
-    def _activate(self):
-        self.window_subsystem.activate()
-        self.fan_subsystem.activate()
-
-    def _deactivate(self):
+    def close_up(self):
         self.fan_subsystem.deactivate()
         self.window_subsystem.deactivate()
+
+    def _activate(self):
+        if self.window_subsystem.activate():
+            self.fan_subsystem.activate()
+            return True
+
+    def _deactivate(self):
+        if self.fan_subsystem.deactivate():
+            self.window_subsystem.deactivate()
+            return True
 
 
 class WindowActuator(AbstractSystem):
@@ -84,7 +92,7 @@ class WindowActuator(AbstractSystem):
                  vdc_close_window_relay_pin, neutral_close_relay_pin,
                  vdc_open_window_relay_pin, neutral_open_relay_pin):
         super(WindowActuator, self).__init__(name)
-        self.actuator_delay_sec = 60
+        self.actuator_delay_sec = 30
         self.duty = .25
 
         self.duty_cycle_delay = self.actuator_delay_sec / self.duty
@@ -160,7 +168,7 @@ class WindowActuator(AbstractSystem):
         self.neutral_close_relay_pin_wrapper.output(_GPIO.LOW)
 
         # Let actuator work
-        time.sleep(self.actuator_delay_sec)
+        time.sleep(self.actuator_delay_sec * 1.5)
 
         # open 'close' relay circuit (power off)
         self.vdc_close_window_relay_pin_wrapper.output(_GPIO.HIGH)
@@ -178,12 +186,19 @@ class Fan(AbstractSystem):
         super(Fan, self).__init__(name)
         self.relay_pin = relay_pin
 
+        self.relay_pin_wrapper = RPiGPIOWrapper(
+            relay_pin)
+
     def _activate(self):
         print('Powering on fan.')
         # open 'fan' relay
+        self.relay_pin_wrapper.output(_GPIO.LOW)
         print('Fan is powered on.')
+        return True
 
     def _deactivate(self):
         print('Powering off fan.')
+        self.relay_pin_wrapper.output(_GPIO.HIGH)
         # close 'fan' relay
         print('Fan is powered off.')
+        return True
