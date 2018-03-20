@@ -156,10 +156,6 @@ class WindowActuator(AbstractSystem):
         self._open_all_relays()
         last_activation_ago = time.time() - self.last_change
 
-        if last_activation_ago < self.duty_cycle_delay:
-            print('Window can not be opened. Waiting for motor duty cooldown.')
-            return False
-
         print('Closing window. Waiting for actuator for %d seconds.' %
               self.actuator_delay_sec)
         # close 'vdc_close_window_relay_pin' and
