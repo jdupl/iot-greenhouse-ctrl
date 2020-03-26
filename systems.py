@@ -68,6 +68,8 @@ class Ventilation(AbstractSystem):
 
     def __init__(self, name, fan_subsystem, window_subsystem):
         super(Ventilation, self).__init__(name)
+        self.state = 'unknown'
+        self.last_change = 0
         self.fan_subsystem = fan_subsystem
         self.window_subsystem = window_subsystem
 
@@ -86,13 +88,13 @@ class Ventilation(AbstractSystem):
             return True
 
 
-class WindowActuator(AbstractSystem):
+class LegacyWindowActuator(AbstractSystem):
 
     def __init__(self, name,
                  vdc_close_window_relay_pin, neutral_close_relay_pin,
                  vdc_open_window_relay_pin, neutral_open_relay_pin):
-        super(WindowActuator, self).__init__(name)
-        self.actuator_delay_sec = 30
+        super(LegacyWindowActuator, self).__init__(name)
+        self.actuator_delay_sec = 60
         self.duty = .25
 
         self.duty_cycle_delay = self.actuator_delay_sec / self.duty
@@ -172,6 +174,73 @@ class WindowActuator(AbstractSystem):
 
         self.vdc_close_window_relay_pin_wrapper.cleanup()
         self.neutral_close_relay_pin_wrapper.cleanup()
+        print('Window is now closed.')
+        return True
+
+class WindowActuator(AbstractSystem):
+
+    def __init__(self, name,
+                 open_window_relay_pin, close_window_relay_pin):
+        super(WindowActuator, self).__init__(name)
+        self.actuator_delay_sec = 30
+        self.duty = .25
+
+        self.duty_cycle_delay = self.actuator_delay_sec / self.duty
+
+        self.open_window_relay = open_window_relay_pin
+        self.close_window_relay = close_window_relay_pin
+
+        self.open_window_relay_pin_wrapper = RPiGPIOWrapper(
+            open_window_relay_pin)
+        self.close_window_relay_pin_wrapper = RPiGPIOWrapper(
+            close_window_relay_pin)
+
+    def _activate(self):
+        # Extends actuator
+
+        last_activation_ago = time.time() - self.last_change
+        if last_activation_ago < self.duty_cycle_delay:
+            print('Window can not be opened. Waiting for motor duty cooldown.')
+            return False
+
+        print('Opening window. Waiting for actuator for %d seconds.' %
+              self.actuator_delay_sec)
+        # Extend now
+        self.open_window_relay_pin_wrapper.output(_GPIO.HIGH)
+        self.close_window_relay_pin_wrapper.output(_GPIO.LOW)
+
+        # Let actuator work
+        time.sleep(self.actuator_delay_sec)
+
+        # Stop actuator
+        self.open_window_relay_pin_wrapper.output(_GPIO.LOW)
+        self.close_window_relay_pin_wrapper.output(_GPIO.LOW)
+
+        self.open_window_relay_pin_wrapper.cleanup()
+        self.close_window_relay_pin_wrapper.cleanup()
+
+        print('Window is now opened.')
+        return True
+
+    def _deactivate(self):
+        # Retracts actuator
+        last_activation_ago = time.time() - self.last_change
+
+        print('Closing window. Waiting for actuator for %d seconds.' %
+              self.actuator_delay_sec)
+        # Retract now
+        self.open_window_relay_pin_wrapper.output(_GPIO.LOW)
+        self.close_window_relay_pin_wrapper.output(_GPIO.HIGH)
+
+        # Let actuator work
+        time.sleep(self.actuator_delay_sec * 1.5)
+
+        # Stop actuator
+        self.open_window_relay_pin_wrapper.output(_GPIO.LOW)
+        self.close_window_relay_pin_wrapper.output(_GPIO.LOW)
+
+        self.open_window_relay_pin_wrapper.cleanup()
+        self.close_window_relay_pin_wrapper.cleanup()
         print('Window is now closed.')
         return True
 

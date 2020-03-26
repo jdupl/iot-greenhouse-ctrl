@@ -33,7 +33,7 @@ def emergency_deactivate(systems):
 def system_operational(sensors):
     # False if an important sensor is down for an extended period of time
     for sensor in sensors:
-        if sensor.last_success + MAX_SENSOR_DOWNTIME_SEC <= time.time():
+        if sensor.last_success and sensor.last_success + MAX_SENSOR_DOWNTIME_SEC <= time.time():
             print('ERROR: sensor %s is down for an extended period !' %
                   sensor.location)
             return False
@@ -41,11 +41,11 @@ def system_operational(sensors):
 
 
 def too_cold(vals):
-    return vals['front']['temperature'] <= 22
+    return vals['front']['temperature'] <= 24
 
 
 def too_hot(vals):
-    return vals['front']['temperature'] > 28
+    return vals['front']['temperature'] > 27
 
 
 def update_systems_status_routine(vals, ventilation):
@@ -57,17 +57,21 @@ def update_systems_status_routine(vals, ventilation):
 
 def main():
     sensors = [
-        # DHT11Sensor(25, 'outside'),
-        # DHT22Sensor(24, 'back'),
         DHT22Sensor(23, 'front')
     ]
 
     fan = Fan('Fan 1', 26)
     window_actuator = WindowActuator('Window 1',
-                                     vdc_close_window_relay_pin=24,
-                                     neutral_close_relay_pin=22,
-                                     vdc_open_window_relay_pin=27,
-                                     neutral_open_relay_pin=17)
+                                     open_window_relay_pin=24,
+                                     close_window_relay_pin=22)
+
+    ## Legacy ##
+
+    # window_actuator = LegacyWindowActuator('Window 1',
+    #                                  vdc_close_window_relay_pin=24,
+    #                                  neutral_close_relay_pin=22,
+    #                                  vdc_open_window_relay_pin=27,
+    #                                  neutral_open_relay_pin=17)
     ventilation = Ventilation('Ventilation system 1', fan, window_actuator)
 
     systems = {
