@@ -19,6 +19,7 @@ class AbstractSensor():
 
 class DHTSensor(AbstractSensor):
     def __init__(self, bcm_pin, location):
+        super(DHTSensor, self).__init__()
         self.bcm_pin = bcm_pin
         self.location = location
 
@@ -39,6 +40,7 @@ class DHTSensor(AbstractSensor):
 
 class ADCSensor(AbstractSensor):
     def __init__(self, i2c_addr, location):
+        super(ADCSensor, self).__init__()
         self.i2c_addr = i2c_addr
         self.location = location
 
