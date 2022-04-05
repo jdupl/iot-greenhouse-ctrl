@@ -1,7 +1,7 @@
 import time
 
 from sensors import DHT11Sensor, DHT22Sensor
-from systems import Ventilation, Fan, WindowActuator
+from systems import Ventilation, Fan, LegacyWindowActuator
 
 
 MAX_SENSOR_DOWNTIME_SEC = 2 * 60
@@ -61,17 +61,15 @@ def main():
     ]
 
     fan = Fan('Fan 1', 26)
-    window_actuator = WindowActuator('Window 1',
-                                     open_window_relay_pin=24,
-                                     close_window_relay_pin=22)
+    # window_actuator = WindowActuator('Window 1',
+    #                                  open_window_relay_pin=24,
+    #                                  close_window_relay_pin=22)
 
-    ## Legacy ##
-
-    # window_actuator = LegacyWindowActuator('Window 1',
-    #                                  vdc_close_window_relay_pin=24,
-    #                                  neutral_close_relay_pin=22,
-    #                                  vdc_open_window_relay_pin=27,
-    #                                  neutral_open_relay_pin=17)
+    window_actuator = LegacyWindowActuator('Window 1',
+                                     vdc_close_window_relay_pin=24,
+                                     neutral_close_relay_pin=22,
+                                     vdc_open_window_relay_pin=27,
+                                     neutral_open_relay_pin=17)
     ventilation = Ventilation('Ventilation system 1', fan, window_actuator)
 
     systems = {

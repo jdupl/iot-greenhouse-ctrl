@@ -95,9 +95,9 @@ class LegacyWindowActuator(AbstractSystem):
                  vdc_open_window_relay_pin, neutral_open_relay_pin):
         super(LegacyWindowActuator, self).__init__(name)
         self.actuator_delay_sec = 60
-        self.duty = .25
+        self.duty = .75
 
-        self.duty_cycle_delay = self.actuator_delay_sec / self.duty
+        self.duty_cycle_delay = self.actuator_delay_sec * (1 - self.duty)
 
         self.vdc_close_window_relay_pin = vdc_close_window_relay_pin
         self.neutral_close_relay_pin = neutral_close_relay_pin
@@ -177,15 +177,16 @@ class LegacyWindowActuator(AbstractSystem):
         print('Window is now closed.')
         return True
 
+
 class WindowActuator(AbstractSystem):
 
     def __init__(self, name,
                  open_window_relay_pin, close_window_relay_pin):
         super(WindowActuator, self).__init__(name)
         self.actuator_delay_sec = 30
-        self.duty = .25
+        self.duty = .75
 
-        self.duty_cycle_delay = self.actuator_delay_sec / self.duty
+        self.duty_cycle_delay = self.actuator_delay_sec * (1 - self.duty)
 
         self.open_window_relay = open_window_relay_pin
         self.close_window_relay = close_window_relay_pin
